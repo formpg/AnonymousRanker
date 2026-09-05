@@ -50,8 +50,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function animateOne(entry, candidatePool, revealedSoFar, state) {
         return new Promise(resolve => {
             showTeaser(RevealUI.expectedNextRank({ ...state, revealed: { length: revealedSoFar } }));
-            wait(1000).then(() => {
-                RevealUI.spin(nameEl, candidatePool, 1200, () => {
+            wait(900).then(() => {
+                RevealUI.spinReel(nameEl, candidatePool, entry.name, 1600, () => {
                     showEntry(entry);
                     appendToList(entry);
                     resolve();

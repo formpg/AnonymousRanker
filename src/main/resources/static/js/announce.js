@@ -56,24 +56,27 @@ document.addEventListener('DOMContentLoaded', () => {
         nextBtn.disabled = true;
 
         showTeaser(RevealUI.expectedNextRank(currentState));
-        await wait(1000);
+        await wait(900);
 
-        RevealUI.spin(nameEl, currentState.candidatePool, 1200, async () => {
-            const response = await fetch('/s/' + adminToken + '/announce/' + currentTopicId + '/reveal-next', { method: 'POST' });
-            currentState = await response.json();
-            renderRevealed(currentState);
+        const response = await fetch('/s/' + adminToken + '/announce/' + currentTopicId + '/reveal-next', { method: 'POST' });
+        currentState = await response.json();
+        renderRevealed(currentState);
 
-            if (currentState.revealed.length > beforeCount) {
-                showEntry(currentState.revealed[currentState.revealed.length - 1]);
-            }
+        if (currentState.revealed.length === beforeCount) {
+            // Already complete - nothing new was revealed.
+            rankEl.textContent = '発表終了';
+            rankEl.classList.remove('rank-teaser');
+            nameEl.textContent = '';
+            countEl.textContent = '';
+            nextBtn.style.display = 'none';
+            return;
+        }
+
+        const entry = currentState.revealed[currentState.revealed.length - 1];
+        RevealUI.spinReel(nameEl, currentState.candidatePool, entry.name, 1600, () => {
+            showEntry(entry);
 
             if (currentState.complete) {
-                rankEl.textContent = '発表終了';
-                rankEl.classList.remove('rank-teaser');
-                if (currentState.revealed.length === beforeCount) {
-                    nameEl.textContent = '';
-                    countEl.textContent = '';
-                }
                 nextBtn.style.display = 'none';
             } else if (currentState.pacing === 'AUTO') {
                 setTimeout(revealStep, currentState.autoIntervalMs);
