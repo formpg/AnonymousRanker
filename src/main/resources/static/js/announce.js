@@ -26,7 +26,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderRevealed(state) {
         revealedList.innerHTML = '';
-        state.revealed.slice().reverse().forEach(entry => {
+        // Always shown best-rank-first (1位 at the top), regardless of
+        // which order (top-down or bottom-up) they were announced in.
+        state.revealed.slice().sort((a, b) => a.rank - b.rank).forEach(entry => {
             const li = document.createElement('li');
             li.textContent = '第' + entry.rank + '位: ' + entry.name + (RevealUI.formatCount(entry) ? ' (' + RevealUI.formatCount(entry) + ')' : '');
             revealedList.appendChild(li);
@@ -60,7 +62,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const response = await fetch('/s/' + adminToken + '/announce/' + currentTopicId + '/reveal-next', { method: 'POST' });
         currentState = await response.json();
-        renderRevealed(currentState);
 
         if (currentState.revealed.length === beforeCount) {
             // Already complete - nothing new was revealed.
@@ -75,6 +76,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const entry = currentState.revealed[currentState.revealed.length - 1];
         RevealUI.spinReel(nameEl, currentState.candidatePool, entry.name, 2000, () => {
             showEntry(entry);
+            // Only added to the "revealed so far" list once the reel has
+            // actually settled, so it can't spoil the result early.
+            renderRevealed(currentState);
 
             if (currentState.complete) {
                 nextBtn.style.display = 'none';

@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let knownTopicId = null;
     let knownCount = 0;
     let animating = false;
+    let revealedEntries = [];
 
     function rangeText(state) {
         if (state.announceOrder === 'BOTTOM_UP') {
@@ -23,10 +24,16 @@ document.addEventListener('DOMContentLoaded', () => {
         return '第1位 〜 第' + state.topN + '位を発表します';
     }
 
-    function appendToList(entry) {
-        const li = document.createElement('li');
-        li.textContent = '第' + entry.rank + '位: ' + entry.name + (RevealUI.formatCount(entry) ? ' (' + RevealUI.formatCount(entry) + ')' : '');
-        revealedList.prepend(li);
+    function addToList(entry) {
+        revealedEntries.push(entry);
+        revealedList.innerHTML = '';
+        // Always shown best-rank-first (1位 at the top), regardless of
+        // which order (top-down or bottom-up) they were announced in.
+        revealedEntries.slice().sort((a, b) => a.rank - b.rank).forEach(e => {
+            const li = document.createElement('li');
+            li.textContent = '第' + e.rank + '位: ' + e.name + (RevealUI.formatCount(e) ? ' (' + RevealUI.formatCount(e) + ')' : '');
+            revealedList.appendChild(li);
+        });
     }
 
     function showTeaser(rank) {
@@ -53,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
             wait(900).then(() => {
                 RevealUI.spinReel(nameEl, candidatePool, entry.name, 2000, () => {
                     showEntry(entry);
-                    appendToList(entry);
+                    addToList(entry);
                     resolve();
                 });
             });
@@ -73,6 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function resetForNewTopic(state) {
         knownTopicId = state.currentTopicId;
         knownCount = 0;
+        revealedEntries = [];
         revealedList.innerHTML = '';
         rankEl.textContent = '';
         nameEl.textContent = '';
@@ -104,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Entries already revealed before this screen was opened are shown instantly, no spin.
                 state.revealed.forEach(entry => {
                     showEntry(entry);
-                    appendToList(entry);
+                    addToList(entry);
                 });
                 knownCount = state.revealed.length;
             } else if (state.revealed.length > knownCount) {
