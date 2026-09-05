@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const entry = currentState.revealed[currentState.revealed.length - 1];
-        RevealUI.spinReel(nameEl, currentState.candidatePool, entry.name, 1600, () => {
+        RevealUI.spinReel(nameEl, currentState.candidatePool, entry.name, 2000, () => {
             showEntry(entry);
 
             if (currentState.complete) {

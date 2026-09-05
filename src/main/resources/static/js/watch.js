@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return new Promise(resolve => {
             showTeaser(RevealUI.expectedNextRank({ ...state, revealed: { length: revealedSoFar } }));
             wait(900).then(() => {
-                RevealUI.spinReel(nameEl, candidatePool, entry.name, 1600, () => {
+                RevealUI.spinReel(nameEl, candidatePool, entry.name, 2000, () => {
                     showEntry(entry);
                     appendToList(entry);
                     resolve();

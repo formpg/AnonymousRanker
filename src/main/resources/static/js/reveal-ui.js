@@ -10,7 +10,7 @@ window.RevealUI = {
      * duration of the spin.
      */
     spinReel(containerEl, candidatePool, finalLabel, spinDurationMs, onSettle) {
-        const spinCount = 22;
+        const spinCount = 28;
         const names = [finalLabel];
         for (let i = 0; i < spinCount; i++) {
             names.push(candidatePool.length > 0
@@ -43,7 +43,11 @@ window.RevealUI = {
         // eslint-disable-next-line no-unused-expressions
         strip.getBoundingClientRect();
 
-        strip.style.transition = 'transform ' + spinDurationMs + 'ms cubic-bezier(0.1, 0.7, 0.15, 1)';
+        // easeOutExpo-style curve: most of the duration is spent decelerating
+        // (unlike a curve whose control points cluster near t=0, which front-
+        // loads all the slowdown and leaves the tail looking frozen instead
+        // of gradually easing to a stop).
+        strip.style.transition = 'transform ' + spinDurationMs + 'ms cubic-bezier(0.16, 1, 0.3, 1)';
         strip.style.transform = 'translateY(0px)';
 
         strip.addEventListener('transitionend', function handler() {
