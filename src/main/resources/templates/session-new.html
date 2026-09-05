@@ -11,10 +11,10 @@
     <p class="subtitle">タイトル・開催日・メンバー・パスワードを入力してください。</p>
     <div class="card">
         <p class="error" th:if="${error}" th:text="${error}"></p>
-        <ul class="error" th:if="${#fields != null and #fields.hasErrors('*')}">
-            <li th:each="err : ${#fields.errors('*')}" th:text="${err}"></li>
-        </ul>
         <form th:action="@{/sessions}" th:object="${form}" method="post">
+            <ul class="error" th:if="${#fields.hasErrors('*')}">
+                <li th:each="err : ${#fields.errors('*')}" th:text="${err}"></li>
+            </ul>
             <label for="title">タイトル</label>
             <input type="text" id="title" th:field="*{title}" placeholder="例: 忘年会2026">
 

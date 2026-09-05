@@ -9,10 +9,10 @@
 <div class="page">
     <h1>投票ルール設定</h1>
     <div class="card">
-        <ul class="error" th:if="${#fields != null and #fields.hasErrors('*')}">
-            <li th:each="err : ${#fields.errors('*')}" th:text="${err}"></li>
-        </ul>
         <form th:action="@{/s/{token}/rules(token=${adminToken})}" th:object="${form}" method="post">
+            <ul class="error" th:if="${#fields.hasErrors('*')}">
+                <li th:each="err : ${#fields.errors('*')}" th:text="${err}"></li>
+            </ul>
             <label for="votesPerTopic">1人が持つ票数（お題ごと）</label>
             <input type="number" id="votesPerTopic" min="1" th:field="*{votesPerTopic}">
 

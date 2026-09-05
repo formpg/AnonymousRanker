@@ -9,10 +9,10 @@
 <div class="page">
     <h1>お題</h1>
     <div class="card">
-        <ul class="error" th:if="${#fields != null and #fields.hasErrors('*')}">
-            <li th:each="err : ${#fields.errors('*')}" th:text="${err}"></li>
-        </ul>
         <form th:action="@{${action}}" th:object="${form}" method="post">
+            <ul class="error" th:if="${#fields.hasErrors('*')}">
+                <li th:each="err : ${#fields.errors('*')}" th:text="${err}"></li>
+            </ul>
             <label for="prompt">お題の内容</label>
             <input type="text" id="prompt" th:field="*{prompt}" placeholder="例: 一番料理が上手いと思う人は？">
             <div class="btn-row">
