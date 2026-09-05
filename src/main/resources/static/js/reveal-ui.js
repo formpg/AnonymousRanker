@@ -10,8 +10,14 @@ window.RevealUI = {
      * duration of the spin.
      */
     spinReel(containerEl, candidatePool, finalLabel, spinDurationMs, onSettle) {
-        const tailCount = 6; // items covered by the slow, lingering final stretch
-        const fastCount = 26; // items blurred through quickly before that
+        const fastDurationMs = Math.round(spinDurationMs * 0.55);
+        const slowDurationMs = spinDurationMs - fastDurationMs;
+
+        // Item counts scale with duration so the fast blur keeps a
+        // consistent pace and the slow tail keeps a consistent "settling"
+        // feel, however long the overall spin is set to run.
+        const tailCount = Math.max(4, Math.round(slowDurationMs / 250));
+        const fastCount = Math.max(8, Math.round(fastDurationMs / 65));
         const names = [finalLabel];
         for (let i = 0; i < tailCount + fastCount; i++) {
             names.push(candidatePool.length > 0
@@ -51,9 +57,6 @@ window.RevealUI = {
         // turning for a while before it actually stops - a single curve
         // that decelerates hard enough to look "fast then slow" tends to
         // finish almost all of its motion very early and then look frozen.
-        const fastDurationMs = Math.round(spinDurationMs * 0.55);
-        const slowDurationMs = spinDurationMs - fastDurationMs;
-
         strip.style.transition = 'transform ' + fastDurationMs + 'ms linear';
         strip.style.transform = 'translateY(' + (-tailStartIndex * itemHeight) + 'px)';
 

@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const entry = currentState.revealed[currentState.revealed.length - 1];
-        RevealUI.spinReel(nameEl, currentState.candidatePool, entry.name, 3200, () => {
+        RevealUI.spinReel(nameEl, currentState.candidatePool, entry.name, 10000, () => {
             showEntry(entry);
             // Only added to the "revealed so far" list once the reel has
             // actually settled, so it can't spoil the result early.
