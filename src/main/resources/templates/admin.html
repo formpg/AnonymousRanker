@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${meeting.title} + ' - 管理画面'">管理画面</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="page">
+    <h1 th:text="${meeting.title}">会のタイトル</h1>
+    <p class="subtitle" th:text="${#temporals.format(meeting.eventDate, 'yyyy年MM月dd日')}">開催日</p>
+
+    <div class="card">
+        <h2>操作</h2>
+        <div class="btn-row">
+            <a class="btn" th:href="@{/s/{token}/announce(token=${adminToken})}">発表する</a>
+            <a class="btn secondary" th:href="@{/s/{token}/rules(token=${adminToken})}">投票ルール設定</a>
+            <a class="btn secondary" th:href="@{/s/{token}/preview(token=${adminToken})}">投票プレビュー</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>投票用URL</h2>
+        <p class="muted">このURLをメンバーに共有してください。パスワードは不要です。</p>
+        <code class="copy-target" id="voting-url"></code>
+        <button type="button" class="secondary" id="copy-btn">コピーする</button>
+    </div>
+
+    <div class="card">
+        <h2>メンバー（<span th:text="${meeting.members.size()}">0</span>人）</h2>
+        <ul class="plain">
+            <li th:each="member : ${meeting.members}" th:text="${member.name}">名前</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>お題</h2>
+        <ul class="plain">
+            <li th:each="p : ${progress}">
+                <div style="flex:1">
+                    <div th:text="${p.topicPrompt}">お題</div>
+                    <div class="progress-bar">
+                        <div th:style="|width: ${p.totalMembers > 0 ? (p.submittedCount * 100 / p.totalMembers) : 0}%|"></div>
+                    </div>
+                    <div class="muted" th:text="|${p.submittedCount} / ${p.totalMembers} 人が投票済み|"></div>
+                </div>
+                <div class="btn-row">
+                    <a class="btn secondary" th:href="@{/s/{token}/topics/{id}/edit(token=${adminToken},id=${p.topicId})}">編集</a>
+                    <form th:action="@{/s/{token}/topics/{id}/delete(token=${adminToken},id=${p.topicId})}" method="post">
+                        <button type="submit" class="danger">削除</button>
+                    </form>
+                </div>
+            </li>
+        </ul>
+        <a class="btn" th:href="@{/s/{token}/topics/new(token=${adminToken})}">お題を追加する</a>
+    </div>
+</div>
+<script th:inline="javascript">
+    const votingPath = /*[[${votingPath}]]*/ '';
+    document.getElementById('voting-url').textContent = window.location.origin + votingPath;
+</script>
+<script th:src="@{/js/copy-link.js}"></script>
+</body>
+</html>

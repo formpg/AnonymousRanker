@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>投票ルール設定 - AnonymousRanker</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="page">
+    <h1>投票ルール設定</h1>
+    <div class="card">
+        <ul class="error" th:if="${#fields != null and #fields.hasErrors('*')}">
+            <li th:each="err : ${#fields.errors('*')}" th:text="${err}"></li>
+        </ul>
+        <form th:action="@{/s/{token}/rules(token=${adminToken})}" th:object="${form}" method="post">
+            <label for="votesPerTopic">1人が持つ票数（お題ごと）</label>
+            <input type="number" id="votesPerTopic" min="1" th:field="*{votesPerTopic}">
+
+            <div class="checkbox-row">
+                <input type="checkbox" id="allowSelfVote" th:field="*{allowSelfVote}">
+                <label for="allowSelfVote" style="margin:0">自分自身に投票できるようにする</label>
+            </div>
+
+            <label for="topN">上位何人まで発表するか</label>
+            <input type="number" id="topN" min="1" th:field="*{topN}">
+
+            <div class="checkbox-row">
+                <input type="checkbox" id="revealCounts" th:field="*{revealCounts}">
+                <label for="revealCounts" style="margin:0">投票数を公開する</label>
+            </div>
+
+            <label for="announceOrder">発表順</label>
+            <select id="announceOrder" th:field="*{announceOrder}">
+                <option value="BOTTOM_UP">下位から（カウントダウン形式）</option>
+                <option value="TOP_DOWN">上位から</option>
+            </select>
+
+            <label for="pacing">発表ペース</label>
+            <select id="pacing" th:field="*{pacing}">
+                <option value="MANUAL">手動（ボタンを押すたびに発表）</option>
+                <option value="AUTO">自動（一定間隔で発表）</option>
+            </select>
+
+            <label for="autoIntervalMs">自動発表の間隔（ミリ秒、自動の場合のみ使用）</label>
+            <input type="number" id="autoIntervalMs" min="500" step="500" th:field="*{autoIntervalMs}">
+
+            <div class="btn-row">
+                <button type="submit">保存する</button>
+                <a class="btn secondary" th:href="@{/s/{token}/admin(token=${adminToken})}">戻る</a>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${topic.prompt} + ' - 投票'">投票</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="page">
+    <p class="error" th:if="${previewMode}" style="color:#ffcf6c">プレビューモード：ここでの操作は投票として記録されません</p>
+    <h1 th:text="${topic.prompt}">お題</h1>
+    <p class="subtitle" th:text="|${votesPerTopic}人まで選んでください|">n人まで選んでください</p>
+    <div class="card">
+        <p class="error" th:if="${error}" th:text="${error}"></p>
+        <form th:action="@{${action}}" method="post" id="ballot-form" th:attr="data-max=${votesPerTopic}">
+            <div class="checkbox-row" th:each="candidate : ${candidates}">
+                <input type="checkbox" name="candidateMemberIds" th:value="${candidate.id}" th:id="'c' + ${candidate.id}">
+                <label th:for="'c' + ${candidate.id}" style="margin:0" th:text="${candidate.name}">名前</label>
+            </div>
+            <button type="submit">投票する</button>
+        </form>
+    </div>
+</div>
+<script th:src="@{/js/ballot.js}"></script>
+</body>
+</html>

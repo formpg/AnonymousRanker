@@ -1,0 +1,197 @@
+:root {
+    --bg: #0f1220;
+    --card: #1b1f33;
+    --text: #f1f2f6;
+    --muted: #9aa0b4;
+    --accent: #6c8dff;
+    --accent-2: #ff6c9c;
+    --border: #2c314a;
+    --danger: #ff6c6c;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: "Segoe UI", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+}
+
+.page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 32px 20px 80px;
+}
+
+h1 {
+    font-size: 1.6rem;
+    margin-bottom: 4px;
+}
+
+h2 {
+    font-size: 1.2rem;
+    margin-top: 0;
+}
+
+.subtitle {
+    color: var(--muted);
+    margin-top: 0;
+    margin-bottom: 24px;
+}
+
+.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+label {
+    display: block;
+    margin: 14px 0 6px;
+    font-size: 0.9rem;
+    color: var(--muted);
+}
+
+input[type="text"],
+input[type="password"],
+input[type="date"],
+input[type="number"],
+textarea,
+select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: #12162a;
+    color: var(--text);
+    font-size: 1rem;
+}
+
+textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 14px 0;
+}
+
+.checkbox-row input {
+    width: auto;
+}
+
+button, .btn {
+    display: inline-block;
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: none;
+    background: var(--accent);
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    text-decoration: none;
+    margin-top: 16px;
+}
+
+button.secondary, .btn.secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+}
+
+button.danger, .btn.danger {
+    background: var(--danger);
+}
+
+.btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.error {
+    color: var(--danger);
+    margin: 8px 0;
+}
+
+.muted {
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+ul.plain {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+ul.plain li {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+ul.plain li:last-child {
+    border-bottom: none;
+}
+
+.progress-bar {
+    background: #12162a;
+    border-radius: 6px;
+    overflow: hidden;
+    height: 8px;
+    margin-top: 6px;
+}
+
+.progress-bar > div {
+    background: var(--accent);
+    height: 100%;
+}
+
+.roulette-display {
+    font-size: 2.4rem;
+    font-weight: bold;
+    text-align: center;
+    padding: 40px 0;
+    background: linear-gradient(135deg, #1b1f33, #262b48);
+    border-radius: 16px;
+    border: 1px solid var(--border);
+}
+
+.roulette-rank {
+    color: var(--accent-2);
+    font-size: 1.2rem;
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.roulette-count {
+    text-align: center;
+    color: var(--muted);
+    margin-top: 8px;
+}
+
+.revealed-list {
+    margin-top: 24px;
+}
+
+code.copy-target {
+    display: block;
+    padding: 10px 12px;
+    background: #12162a;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    word-break: break-all;
+}

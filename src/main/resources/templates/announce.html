@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${meeting.title} + ' - 発表'">発表</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="page" th:attr="data-admin-token=${adminToken}" id="announce-page">
+    <h1 th:text="${meeting.title}">会のタイトル</h1>
+
+    <div class="card">
+        <h2>お題を選んで発表を開始</h2>
+        <div class="btn-row">
+            <button type="button" class="secondary topic-btn" th:each="topic : ${topics}"
+                    th:text="${topic.prompt}" th:attr="data-topic-id=${topic.id}"></button>
+        </div>
+        <p class="muted" th:if="${topics.isEmpty()}">お題がまだありません。管理画面からお題を追加してください。</p>
+    </div>
+
+    <div class="card" id="reveal-card" style="display:none">
+        <div class="roulette-rank" id="reveal-rank"></div>
+        <div class="roulette-display" id="reveal-name">-</div>
+        <div class="roulette-count" id="reveal-count"></div>
+        <div class="btn-row" style="justify-content:center">
+            <button type="button" id="next-btn" style="display:none">次の順位を発表</button>
+        </div>
+        <div class="revealed-list">
+            <ul class="plain" id="revealed-list"></ul>
+        </div>
+    </div>
+
+    <a class="btn secondary" th:href="@{/s/{token}/admin(token=${adminToken})}">管理画面に戻る</a>
+</div>
+<script th:src="@{/js/roulette.js}"></script>
+</body>
+</html>

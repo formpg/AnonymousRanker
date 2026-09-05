@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>AnonymousRanker</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="page">
+    <h1>AnonymousRanker</h1>
+    <p class="subtitle">仲間内で匿名投票をして、ランキングをルーレット演出で発表できるサイトです。</p>
+    <div class="card">
+        <h2>新しい会を作る</h2>
+        <p class="muted">タイトル・開催日・メンバー・パスワードを決めて会を作成します。</p>
+        <a class="btn" th:href="@{/sessions/new}">会を作成する</a>
+    </div>
+</div>
+</body>
+</html>

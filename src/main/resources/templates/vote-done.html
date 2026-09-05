@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>投票完了 - AnonymousRanker</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="page">
+    <p class="error" th:if="${previewMode}" style="color:#ffcf6c">プレビューモード：ここでの操作は投票として記録されません</p>
+    <h1>投票ありがとうございました！</h1>
+    <div class="card">
+        <p th:text="${meeting.title} + 'の全てのお題への投票が完了しました。'">投票完了</p>
+    </div>
+</div>
+</body>
+</html>

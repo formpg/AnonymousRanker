@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>会を作成 - AnonymousRanker</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="page">
+    <h1>会を作成</h1>
+    <p class="subtitle">タイトル・開催日・メンバー・パスワードを入力してください。</p>
+    <div class="card">
+        <p class="error" th:if="${error}" th:text="${error}"></p>
+        <ul class="error" th:if="${#fields != null and #fields.hasErrors('*')}">
+            <li th:each="err : ${#fields.errors('*')}" th:text="${err}"></li>
+        </ul>
+        <form th:action="@{/sessions}" th:object="${form}" method="post">
+            <label for="title">タイトル</label>
+            <input type="text" id="title" th:field="*{title}" placeholder="例: 忘年会2026">
+
+            <label for="eventDate">開催日</label>
+            <input type="date" id="eventDate" th:field="*{eventDate}">
+
+            <label for="memberNames">メンバー（1行に1人）</label>
+            <textarea id="memberNames" th:field="*{memberNames}" placeholder="たろう&#10;はなこ&#10;じろう"></textarea>
+
+            <label for="password">パスワード</label>
+            <input type="password" id="password" th:field="*{password}">
+
+            <button type="submit">会を作成する</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>
