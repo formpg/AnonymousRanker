@@ -8,5 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface VoteSubmissionRepository extends JpaRepository<VoteSubmission, Long> {
     boolean existsByTopicAndVoterMember(Topic topic, Member voterMember);
 
+    void deleteByTopicAndVoterMember(Topic topic, Member voterMember);
+
     long countByTopic(Topic topic);
 }

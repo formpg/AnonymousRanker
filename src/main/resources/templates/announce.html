@@ -16,9 +16,12 @@
                     th:text="${topic.prompt}" th:attr="data-topic-id=${topic.id}"></button>
         </div>
         <p class="muted" th:if="${topics.isEmpty()}">お題がまだありません。管理画面からお題を追加してください。</p>
+        <p class="muted">この発表画面を開いている投票者にも、リアルタイムで同じ内容が届きます。</p>
     </div>
 
     <div class="card" id="reveal-card" style="display:none">
+        <div id="reveal-topic-label" style="font-weight:bold;margin-bottom:4px"></div>
+        <div id="reveal-range-label" class="muted" style="margin-bottom:16px"></div>
         <div class="roulette-rank" id="reveal-rank"></div>
         <div class="roulette-display" id="reveal-name">-</div>
         <div class="roulette-count" id="reveal-count"></div>
@@ -32,6 +35,7 @@
 
     <a class="btn secondary" th:href="@{/s/{token}/admin(token=${adminToken})}">管理画面に戻る</a>
 </div>
-<script th:src="@{/js/roulette.js}"></script>
+<script th:src="@{/js/reveal-ui.js}"></script>
+<script th:src="@{/js/announce.js}"></script>
 </body>
 </html>

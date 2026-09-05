@@ -10,7 +10,22 @@
     <p class="error" th:if="${previewMode}" style="color:#ffcf6c">プレビューモード：ここでの操作は投票として記録されません</p>
     <h1>投票ありがとうございました！</h1>
     <div class="card">
-        <p th:text="${meeting.title} + 'の全てのお題への投票が完了しました。'">投票完了</p>
+        <p>全てのお題への投票が完了しました。</p>
+        <div class="btn-row">
+            <a class="btn secondary"
+               th:if="${previewMode}"
+               th:href="@{/s/{token}/preview/ballot(token=${adminToken})}">投票を修正する</a>
+            <a class="btn secondary"
+               th:unless="${previewMode}"
+               th:href="@{/vote/{token}/ballot(token=${votingToken})}">投票を修正する</a>
+
+            <a class="btn"
+               th:if="${previewMode}"
+               th:href="@{/s/{token}/admin(token=${adminToken})}">管理画面に戻る</a>
+            <a class="btn"
+               th:unless="${previewMode}"
+               th:href="@{/vote/{token}(token=${votingToken})}">ホームに戻る</a>
+        </div>
     </div>
 </div>
 </body>

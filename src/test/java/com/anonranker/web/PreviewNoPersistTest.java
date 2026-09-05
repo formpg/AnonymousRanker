@@ -73,12 +73,12 @@ class PreviewNoPersistTest {
                 .session(httpSession)
                 .param("memberId", String.valueOf(alice.getId())));
 
-        mockMvc.perform(get("/s/" + session.getAdminToken() + "/preview/topics/" + topic.getId())
+        mockMvc.perform(get("/s/" + session.getAdminToken() + "/preview/ballot")
                 .session(httpSession));
 
-        mockMvc.perform(post("/s/" + session.getAdminToken() + "/preview/topics/" + topic.getId())
+        mockMvc.perform(post("/s/" + session.getAdminToken() + "/preview/ballot")
                 .session(httpSession)
-                .param("candidateMemberIds", String.valueOf(bob.getId())));
+                .param("vote_" + topic.getId() + "_0", String.valueOf(bob.getId())));
 
         assertThat(voteRepository.count()).isEqualTo(votesBefore);
         assertThat(voteSubmissionRepository.count()).isEqualTo(submissionsBefore);

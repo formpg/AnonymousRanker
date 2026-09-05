@@ -6,6 +6,7 @@ import com.anonranker.domain.Member;
 import com.anonranker.domain.Session;
 import com.anonranker.domain.Topic;
 import com.anonranker.service.AnnouncementService;
+import com.anonranker.service.AnnouncementStateService;
 import com.anonranker.service.SessionService;
 import com.anonranker.service.TopicService;
 import com.anonranker.service.VotingRuleService;
@@ -40,6 +41,8 @@ class AnnouncementDataTest {
     @Autowired
     private AnnouncementService announcementService;
     @Autowired
+    private AnnouncementStateService announcementStateService;
+    @Autowired
     private ObjectMapper objectMapper;
 
     private Session session;
@@ -60,16 +63,29 @@ class AnnouncementDataTest {
         bob = session.getMembers().get(1);
         carol = session.getMembers().get(2);
         topic = topicService.addTopic(session, "Who is the MVP?");
+        applyRule(true, AnnounceOrder.TOP_DOWN);
 
         // Bob receives 2 votes (from Alice and Carol), Carol receives 1 vote (from Bob)
-        votingService.castBallot(session, topic, alice, List.of(bob.getId()));
-        votingService.castBallot(session, topic, carol, List.of(bob.getId()));
-        votingService.castBallot(session, topic, bob, List.of(carol.getId()));
+        votingService.upsertBallot(session, topic, alice, List.of(bob.getId()));
+        votingService.upsertBallot(session, topic, carol, List.of(bob.getId()));
+        votingService.upsertBallot(session, topic, bob, List.of(carol.getId()));
+    }
+
+    private void applyRule(boolean revealCounts, AnnounceOrder order) {
+        VotingRuleForm ruleForm = new VotingRuleForm();
+        ruleForm.setVotesPerTopic(1);
+        ruleForm.setAllowSelfVote(false);
+        ruleForm.setTopN(3);
+        ruleForm.setRevealCounts(revealCounts);
+        ruleForm.setAnnounceOrder(order);
+        ruleForm.setPacing(AnnouncePacing.MANUAL);
+        ruleForm.setAutoIntervalMs(3000);
+        votingRuleService.updateRule(session, ruleForm);
     }
 
     @Test
-    void revealReflectsAggregatedCountsInRankOrder() {
-        RankingRevealDto reveal = announcementService.buildReveal(session, topic);
+    void topDownSequenceStartsWithRankOne() {
+        RankingRevealDto reveal = announcementService.buildRevealSequence(session, topic);
 
         assertThat(reveal.getRanks()).extracting("name").containsExactly("Bob", "Carol", "Alice");
         assertThat(reveal.getRanks()).extracting("count").containsExactly(2L, 1L, 0L);
@@ -77,20 +93,41 @@ class AnnouncementDataTest {
     }
 
     @Test
-    void jsonOmitsCountFieldEntirelyWhenRevealCountsIsDisabled() throws Exception {
-        VotingRuleForm ruleForm = new VotingRuleForm();
-        ruleForm.setVotesPerTopic(1);
-        ruleForm.setAllowSelfVote(false);
-        ruleForm.setTopN(3);
-        ruleForm.setRevealCounts(false);
-        ruleForm.setAnnounceOrder(AnnounceOrder.TOP_DOWN);
-        ruleForm.setPacing(AnnouncePacing.MANUAL);
-        ruleForm.setAutoIntervalMs(3000);
-        votingRuleService.updateRule(session, ruleForm);
+    void bottomUpSequenceIsReversed() {
+        applyRule(true, AnnounceOrder.BOTTOM_UP);
 
-        RankingRevealDto reveal = announcementService.buildReveal(session, topic);
+        RankingRevealDto reveal = announcementService.buildRevealSequence(session, topic);
+
+        assertThat(reveal.getRanks()).extracting("name").containsExactly("Alice", "Carol", "Bob");
+    }
+
+    @Test
+    void jsonOmitsCountFieldEntirelyWhenRevealCountsIsDisabled() throws Exception {
+        applyRule(false, AnnounceOrder.TOP_DOWN);
+
+        RankingRevealDto reveal = announcementService.buildRevealSequence(session, topic);
         String json = objectMapper.writeValueAsString(reveal);
 
         assertThat(json).doesNotContain("\"count\"");
+    }
+
+    @Test
+    void currentStateTracksIncrementalReveal() {
+        announcementStateService.startTopic(session.getId(), topic.getId());
+        RankingRevealDto sequence = announcementService.buildRevealSequence(session, topic);
+
+        assertThat(announcementService.currentState(session, topic).isComplete()).isFalse();
+        assertThat(announcementService.currentState(session, topic).getRevealed()).isEmpty();
+
+        announcementStateService.revealNext(topic.getId(), sequence.getRanks());
+        var afterFirst = announcementService.currentState(session, topic);
+        assertThat(afterFirst.getRevealed()).extracting("name").containsExactly("Bob");
+        assertThat(afterFirst.isComplete()).isFalse();
+
+        announcementStateService.revealNext(topic.getId(), sequence.getRanks());
+        announcementStateService.revealNext(topic.getId(), sequence.getRanks());
+        var afterAll = announcementService.currentState(session, topic);
+        assertThat(afterAll.getRevealed()).extracting("name").containsExactly("Bob", "Carol", "Alice");
+        assertThat(afterAll.isComplete()).isTrue();
     }
 }

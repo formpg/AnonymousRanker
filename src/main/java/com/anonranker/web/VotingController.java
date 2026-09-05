@@ -5,27 +5,34 @@ import com.anonranker.domain.Member;
 import com.anonranker.domain.Session;
 import com.anonranker.domain.Topic;
 import com.anonranker.domain.VotingRule;
+import com.anonranker.service.AnnouncementStateService;
+import com.anonranker.service.BallotValidator;
 import com.anonranker.service.SessionService;
 import com.anonranker.service.TopicService;
 import com.anonranker.service.VotingRuleService;
 import com.anonranker.service.VotingService;
-import com.anonranker.service.exception.AlreadyVotedException;
 import com.anonranker.service.exception.InvalidBallotException;
-import com.anonranker.web.dto.BallotForm;
+import com.anonranker.web.dto.TopicBallotView;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Public, no-password voting flow reached via a session's unguessable voting
  * link. Every template rendered from here uses the nav-free voting layout so
- * a voter can never navigate anywhere but through the ballot flow.
+ * a voter can never navigate anywhere but through this flow.
  */
 @Controller
 @RequestMapping("/vote/{votingToken}")
@@ -35,16 +42,28 @@ public class VotingController {
     private final TopicService topicService;
     private final VotingService votingService;
     private final VotingRuleService votingRuleService;
+    private final BallotValidator ballotValidator;
+    private final AnnouncementStateService announcementStateService;
 
     public VotingController(SessionService sessionService, TopicService topicService,
-                             VotingService votingService, VotingRuleService votingRuleService) {
+                             VotingService votingService, VotingRuleService votingRuleService,
+                             BallotValidator ballotValidator, AnnouncementStateService announcementStateService) {
         this.sessionService = sessionService;
         this.topicService = topicService;
         this.votingService = votingService;
         this.votingRuleService = votingRuleService;
+        this.ballotValidator = ballotValidator;
+        this.announcementStateService = announcementStateService;
     }
 
     @GetMapping
+    public String menu(@PathVariable String votingToken, Model model) {
+        model.addAttribute("meeting", sessionService.getByVotingToken(votingToken));
+        model.addAttribute("votingToken", votingToken);
+        return "vote-menu";
+    }
+
+    @GetMapping("/vote")
     public String identifyForm(@PathVariable String votingToken, Model model) {
         Session session = sessionService.getByVotingToken(votingToken);
         model.addAttribute("meeting", session);
@@ -58,87 +77,129 @@ public class VotingController {
         Session session = sessionService.getByVotingToken(votingToken);
         boolean valid = session.getMembers().stream().anyMatch(m -> m.getId().equals(memberId));
         if (!valid) {
-            return "redirect:/vote/" + votingToken;
+            return "redirect:/vote/" + votingToken + "/vote";
         }
         rememberVoter(httpSession, votingToken, memberId);
-        return "redirect:" + nextStepPath(session, memberId, votingToken);
+        return "redirect:/vote/" + votingToken + "/ballot";
     }
 
-    @GetMapping("/topics/{topicId}")
-    public String ballotForm(@PathVariable String votingToken, @PathVariable Long topicId,
-                              HttpSession httpSession, Model model) {
+    @GetMapping("/ballot")
+    public String ballotForm(@PathVariable String votingToken, HttpSession httpSession, Model model) {
         Session session = sessionService.getByVotingToken(votingToken);
         Long voterId = requireVoter(httpSession, votingToken);
         if (voterId == null) {
-            return "redirect:/vote/" + votingToken;
+            return "redirect:/vote/" + votingToken + "/vote";
         }
-        Topic topic = topicService.getTopic(session, topicId);
         Member voter = findMember(session, voterId);
-        if (votingService.hasSubmitted(topic, voter)) {
-            return "redirect:" + nextStepPath(session, voterId, votingToken);
-        }
-
         VotingRule rule = votingRuleService.getRule(session);
-        List<Member> candidates = session.getMembers().stream()
-                .filter(m -> rule.isAllowSelfVote() || !m.getId().equals(voterId))
-                .toList();
+
+        List<TopicBallotView> topicViews = new ArrayList<>();
+        for (Topic topic : topicService.listTopics(session)) {
+            boolean locked = announcementStateService.hasAnyReveal(topic.getId());
+            List<Member> candidates = eligibleCandidates(session, rule, voterId);
+            List<Long> existing = votingService.getExistingCandidateIds(topic, voter);
+            topicViews.add(new TopicBallotView(topic.getId(), topic.getPrompt(), candidates,
+                    padToSlots(existing, rule.getVotesPerTopic()), locked, null));
+        }
 
         model.addAttribute("meeting", session);
         model.addAttribute("votingToken", votingToken);
-        model.addAttribute("topic", topic);
-        model.addAttribute("candidates", candidates);
+        model.addAttribute("topicViews", topicViews);
         model.addAttribute("votesPerTopic", rule.getVotesPerTopic());
-        model.addAttribute("action", "/vote/" + votingToken + "/topics/" + topicId);
-        model.addAttribute("form", new BallotForm());
+        model.addAttribute("action", "/vote/" + votingToken + "/ballot");
         return "vote-ballot";
     }
 
-    @PostMapping("/topics/{topicId}")
-    public String submitBallot(@PathVariable String votingToken, @PathVariable Long topicId,
-                                @ModelAttribute("form") BallotForm form,
+    @PostMapping("/ballot")
+    public String submitBallot(@PathVariable String votingToken, HttpServletRequest request,
                                 HttpSession httpSession, Model model) {
         Session session = sessionService.getByVotingToken(votingToken);
         Long voterId = requireVoter(httpSession, votingToken);
         if (voterId == null) {
-            return "redirect:/vote/" + votingToken;
+            return "redirect:/vote/" + votingToken + "/vote";
         }
-        Topic topic = topicService.getTopic(session, topicId);
         Member voter = findMember(session, voterId);
+        VotingRule rule = votingRuleService.getRule(session);
+        List<Member> sessionMembers = session.getMembers();
+        List<Topic> topics = topicService.listTopics(session);
 
-        try {
-            votingService.castBallot(session, topic, voter, form.getCandidateMemberIds());
-        } catch (AlreadyVotedException | InvalidBallotException ex) {
-            VotingRule rule = votingRuleService.getRule(session);
-            List<Member> candidates = session.getMembers().stream()
-                    .filter(m -> rule.isAllowSelfVote() || !m.getId().equals(voterId))
-                    .toList();
+        Map<Long, List<Long>> selectionsByTopicId = parseSelections(request, topics, rule.getVotesPerTopic());
+        Map<Long, String> errorsByTopicId = new HashMap<>();
+
+        for (Topic topic : topics) {
+            if (announcementStateService.hasAnyReveal(topic.getId())) {
+                continue;
+            }
+            try {
+                ballotValidator.validate(rule, voter, sessionMembers, selectionsByTopicId.get(topic.getId()));
+            } catch (InvalidBallotException ex) {
+                errorsByTopicId.put(topic.getId(), ex.getMessage());
+            }
+        }
+
+        if (!errorsByTopicId.isEmpty()) {
+            List<TopicBallotView> topicViews = new ArrayList<>();
+            for (Topic topic : topics) {
+                boolean locked = announcementStateService.hasAnyReveal(topic.getId());
+                List<Member> candidates = eligibleCandidates(session, rule, voterId);
+                List<Long> submitted = locked
+                        ? votingService.getExistingCandidateIds(topic, voter)
+                        : selectionsByTopicId.get(topic.getId());
+                topicViews.add(new TopicBallotView(topic.getId(), topic.getPrompt(), candidates,
+                        padToSlots(submitted, rule.getVotesPerTopic()), locked, errorsByTopicId.get(topic.getId())));
+            }
             model.addAttribute("meeting", session);
             model.addAttribute("votingToken", votingToken);
-            model.addAttribute("topic", topic);
-            model.addAttribute("candidates", candidates);
+            model.addAttribute("topicViews", topicViews);
             model.addAttribute("votesPerTopic", rule.getVotesPerTopic());
-            model.addAttribute("action", "/vote/" + votingToken + "/topics/" + topicId);
-            model.addAttribute("error", ex.getMessage());
+            model.addAttribute("action", "/vote/" + votingToken + "/ballot");
             return "vote-ballot";
         }
 
-        return "redirect:" + nextStepPath(session, voterId, votingToken);
+        for (Topic topic : topics) {
+            if (announcementStateService.hasAnyReveal(topic.getId())) {
+                continue;
+            }
+            votingService.upsertBallot(session, topic, voter, selectionsByTopicId.get(topic.getId()));
+        }
+
+        return "redirect:/vote/" + votingToken + "/done";
     }
 
     @GetMapping("/done")
     public String done(@PathVariable String votingToken, Model model) {
         model.addAttribute("meeting", sessionService.getByVotingToken(votingToken));
+        model.addAttribute("votingToken", votingToken);
         return "vote-done";
     }
 
-    private String nextStepPath(Session session, Long voterId, String votingToken) {
-        Member voter = findMember(session, voterId);
-        List<Topic> topics = topicService.listTopics(session);
-        Optional<Topic> next = topics.stream()
-                .filter(t -> !votingService.hasSubmitted(t, voter))
-                .findFirst();
-        return next.map(t -> "/vote/" + votingToken + "/topics/" + t.getId())
-                .orElse("/vote/" + votingToken + "/done");
+    private List<Member> eligibleCandidates(Session session, VotingRule rule, Long voterId) {
+        return session.getMembers().stream()
+                .filter(m -> rule.isAllowSelfVote() || !m.getId().equals(voterId))
+                .toList();
+    }
+
+    private Map<Long, List<Long>> parseSelections(HttpServletRequest request, List<Topic> topics, int votesPerTopic) {
+        Map<Long, List<Long>> result = new LinkedHashMap<>();
+        for (Topic topic : topics) {
+            List<Long> candidateIds = new ArrayList<>();
+            for (int slot = 0; slot < votesPerTopic; slot++) {
+                String raw = request.getParameter("vote_" + topic.getId() + "_" + slot);
+                if (raw != null && !raw.isBlank()) {
+                    candidateIds.add(Long.valueOf(raw));
+                }
+            }
+            result.put(topic.getId(), candidateIds);
+        }
+        return result;
+    }
+
+    private List<Long> padToSlots(List<Long> values, int slotCount) {
+        List<Long> padded = new ArrayList<>(values);
+        while (padded.size() < slotCount) {
+            padded.add(null);
+        }
+        return padded;
     }
 
     private Member findMember(Session session, Long memberId) {

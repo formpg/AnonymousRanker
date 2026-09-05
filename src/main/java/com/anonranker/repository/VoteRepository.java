@@ -23,6 +23,10 @@ public interface VoteRepository extends JpaRepository<Vote, Long> {
             """)
     List<CandidateVoteCount> countVotesByCandidate(@Param("topic") Topic topic);
 
+    List<Vote> findByTopicAndVoterMember(Topic topic, Member voterMember);
+
+    void deleteByTopicAndVoterMember(Topic topic, Member voterMember);
+
     interface CandidateVoteCount {
         Member getCandidate();
 

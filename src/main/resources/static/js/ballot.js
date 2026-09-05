@@ -1,18 +1,38 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('ballot-form');
-    if (!form) {
+    const selects = Array.from(document.querySelectorAll('select.ballot-select'));
+    if (selects.length === 0) {
         return;
     }
-    const max = parseInt(form.dataset.max, 10) || 1;
-    const checkboxes = Array.from(form.querySelectorAll('input[type="checkbox"]'));
 
-    function refresh() {
-        const checkedCount = checkboxes.filter(cb => cb.checked).length;
-        checkboxes.forEach(cb => {
-            cb.disabled = !cb.checked && checkedCount >= max;
+    const groups = new Map();
+    selects.forEach(select => {
+        const topicId = select.dataset.topic;
+        if (!groups.has(topicId)) {
+            groups.set(topicId, []);
+        }
+        groups.get(topicId).push(select);
+    });
+
+    function refreshGroup(groupSelects) {
+        const chosen = groupSelects
+            .map(s => s.value)
+            .filter(v => v !== '');
+
+        groupSelects.forEach(select => {
+            Array.from(select.options).forEach(option => {
+                if (option.value === '') {
+                    return;
+                }
+                const chosenElsewhere = chosen.includes(option.value) && option.value !== select.value;
+                option.disabled = chosenElsewhere;
+            });
         });
     }
 
-    checkboxes.forEach(cb => cb.addEventListener('change', refresh));
-    refresh();
+    groups.forEach(groupSelects => {
+        groupSelects.forEach(select => {
+            select.addEventListener('change', () => refreshGroup(groupSelects));
+        });
+        refreshGroup(groupSelects);
+    });
 });

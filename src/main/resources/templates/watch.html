@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${meeting.title} + ' - 発表を見る'">発表を見る</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="page" id="watch-page" th:attr="data-voting-token=${votingToken}">
+    <h1 th:text="${meeting.title}">会のタイトル</h1>
+
+    <div class="card">
+        <p id="waiting-label">まだ発表が始まっていません。幹事が発表を開始するまでお待ちください。</p>
+        <div id="reveal-topic-label" style="font-weight:bold;margin-bottom:4px;display:none"></div>
+        <div id="reveal-range-label" class="muted" style="margin-bottom:16px;display:none"></div>
+        <div class="roulette-rank" id="reveal-rank"></div>
+        <div class="roulette-display" id="reveal-name"></div>
+        <div class="roulette-count" id="reveal-count"></div>
+        <div class="revealed-list">
+            <ul class="plain" id="revealed-list"></ul>
+        </div>
+    </div>
+</div>
+<script th:src="@{/js/reveal-ui.js}"></script>
+<script th:src="@{/js/watch.js}"></script>
+</body>
+</html>

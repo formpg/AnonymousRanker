@@ -3,6 +3,7 @@ package com.anonranker.web;
 import com.anonranker.domain.Member;
 import com.anonranker.domain.Session;
 import com.anonranker.domain.Topic;
+import com.anonranker.repository.VoteRepository;
 import com.anonranker.repository.VoteSubmissionRepository;
 import com.anonranker.service.SessionService;
 import com.anonranker.service.TopicService;
@@ -44,10 +45,14 @@ class VotingFlowTest {
     @Autowired
     private VoteSubmissionRepository voteSubmissionRepository;
 
+    @Autowired
+    private VoteRepository voteRepository;
+
     private Session session;
     private Topic topic;
     private Member alice;
     private Member bob;
+    private Member carol;
 
     @BeforeEach
     void setUp() {
@@ -59,41 +64,60 @@ class VotingFlowTest {
         session = sessionService.createSession(form);
         alice = session.getMembers().get(0);
         bob = session.getMembers().get(1);
+        carol = session.getMembers().get(2);
         topic = topicService.addTopic(session, "Who is the best?");
+    }
+
+    private MockHttpSession identifyAs(Member member) throws Exception {
+        MockHttpSession httpSession = new MockHttpSession();
+        mockMvc.perform(post("/vote/" + session.getVotingToken() + "/identify")
+                .session(httpSession)
+                .param("memberId", String.valueOf(member.getId())));
+        return httpSession;
     }
 
     @Test
     void ballotPageExcludesTheVoterWhenSelfVoteIsDisallowed() throws Exception {
-        MockHttpSession httpSession = new MockHttpSession();
-        mockMvc.perform(post("/vote/" + session.getVotingToken() + "/identify")
-                .session(httpSession)
-                .param("memberId", String.valueOf(alice.getId())));
+        MockHttpSession httpSession = identifyAs(alice);
 
-        mockMvc.perform(get("/vote/" + session.getVotingToken() + "/topics/" + topic.getId()).session(httpSession))
+        mockMvc.perform(get("/vote/" + session.getVotingToken() + "/ballot").session(httpSession))
                 .andExpect(status().isOk())
-                .andExpect(content().string(not(containsString(alice.getName()))))
+                .andExpect(content().string(not(containsString(">" + alice.getName() + "<"))))
                 .andExpect(content().string(containsString(bob.getName())));
     }
 
     @Test
-    void castingABallotRecordsSubmissionAndBlocksDoubleVoting() throws Exception {
-        MockHttpSession httpSession = new MockHttpSession();
-        mockMvc.perform(post("/vote/" + session.getVotingToken() + "/identify")
-                .session(httpSession)
-                .param("memberId", String.valueOf(alice.getId())));
+    void castingABallotRecordsAVote() throws Exception {
+        MockHttpSession httpSession = identifyAs(alice);
 
-        mockMvc.perform(post("/vote/" + session.getVotingToken() + "/topics/" + topic.getId())
+        mockMvc.perform(post("/vote/" + session.getVotingToken() + "/ballot")
                         .session(httpSession)
-                        .param("candidateMemberIds", String.valueOf(bob.getId())))
+                        .param("vote_" + topic.getId() + "_0", String.valueOf(bob.getId())))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/vote/" + session.getVotingToken() + "/done"));
 
         assertThat(voteSubmissionRepository.existsByTopicAndVoterMember(topic, alice)).isTrue();
+        assertThat(voteRepository.findByTopicAndVoterMember(topic, alice))
+                .extracting(v -> v.getCandidateMember().getId())
+                .containsExactly(bob.getId());
+    }
 
-        mockMvc.perform(post("/vote/" + session.getVotingToken() + "/topics/" + topic.getId())
+    @Test
+    void resubmittingTheBallotOverwritesThePreviousVote() throws Exception {
+        MockHttpSession httpSession = identifyAs(alice);
+
+        mockMvc.perform(post("/vote/" + session.getVotingToken() + "/ballot")
+                .session(httpSession)
+                .param("vote_" + topic.getId() + "_0", String.valueOf(bob.getId())));
+
+        mockMvc.perform(post("/vote/" + session.getVotingToken() + "/ballot")
                         .session(httpSession)
-                        .param("candidateMemberIds", String.valueOf(bob.getId())))
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString("already submitted")));
+                        .param("vote_" + topic.getId() + "_0", String.valueOf(carol.getId())))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/vote/" + session.getVotingToken() + "/done"));
+
+        assertThat(voteRepository.findByTopicAndVoterMember(topic, alice))
+                .extracting(v -> v.getCandidateMember().getId())
+                .containsExactly(carol.getId());
     }
 }

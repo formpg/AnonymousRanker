@@ -9,7 +9,6 @@ import com.anonranker.domain.VotingRule;
 import com.anonranker.repository.MemberRepository;
 import com.anonranker.repository.VoteRepository;
 import com.anonranker.repository.VoteSubmissionRepository;
-import com.anonranker.service.exception.AlreadyVotedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,19 +34,32 @@ public class VotingService {
     }
 
     @Transactional(readOnly = true)
-    public boolean hasSubmitted(Topic topic, Member voter) {
-        return voteSubmissionRepository.existsByTopicAndVoterMember(topic, voter);
+    public List<Long> getExistingCandidateIds(Topic topic, Member voter) {
+        return voteRepository.findByTopicAndVoterMember(topic, voter).stream()
+                .map(vote -> vote.getCandidateMember().getId())
+                .toList();
     }
 
+    /**
+     * Casts (or overwrites) a member's ballot for a topic. Voting is
+     * intentionally re-submittable - a fresh call always replaces whatever
+     * that member previously chose for this topic, rather than being
+     * rejected as a duplicate.
+     */
     @Transactional
-    public void castBallot(Session session, Topic topic, Member voter, List<Long> candidateMemberIds) {
-        if (hasSubmitted(topic, voter)) {
-            throw new AlreadyVotedException();
-        }
-
+    public void upsertBallot(Session session, Topic topic, Member voter, List<Long> candidateMemberIds) {
         VotingRule rule = votingRuleService.getRule(session);
         List<Member> sessionMembers = memberRepository.findBySessionOrderByDisplayOrderAsc(session);
         ballotValidator.validate(rule, voter, sessionMembers, candidateMemberIds);
+
+        // Hibernate flushes pending inserts before pending deletes regardless of call
+        // order, so without an explicit flush here, re-inserting a row with the same
+        // natural key (e.g. re-picking the same candidate, or just re-submitting the
+        // same topic) would violate the unique constraint before the old row is gone.
+        voteRepository.deleteByTopicAndVoterMember(topic, voter);
+        voteSubmissionRepository.deleteByTopicAndVoterMember(topic, voter);
+        voteRepository.flush();
+        voteSubmissionRepository.flush();
 
         for (Long candidateId : candidateMemberIds) {
             Member candidate = sessionMembers.stream()
