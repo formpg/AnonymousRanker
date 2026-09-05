@@ -10,9 +10,10 @@ window.RevealUI = {
      * duration of the spin.
      */
     spinReel(containerEl, candidatePool, finalLabel, spinDurationMs, onSettle) {
-        const spinCount = 28;
+        const tailCount = 6; // items covered by the slow, lingering final stretch
+        const fastCount = 26; // items blurred through quickly before that
         const names = [finalLabel];
-        for (let i = 0; i < spinCount; i++) {
+        for (let i = 0; i < tailCount + fastCount; i++) {
             names.push(candidatePool.length > 0
                 ? candidatePool[Math.floor(Math.random() * candidatePool.length)]
                 : finalLabel);
@@ -34,6 +35,7 @@ window.RevealUI = {
 
         const itemHeight = strip.firstChild.getBoundingClientRect().height;
         const lastIndex = names.length - 1;
+        const tailStartIndex = tailCount;
 
         strip.style.transition = 'none';
         strip.style.transform = 'translateY(' + (-lastIndex * itemHeight) + 'px)';
@@ -43,16 +45,26 @@ window.RevealUI = {
         // eslint-disable-next-line no-unused-expressions
         strip.getBoundingClientRect();
 
-        // easeOutExpo-style curve: most of the duration is spent decelerating
-        // (unlike a curve whose control points cluster near t=0, which front-
-        // loads all the slowdown and leaves the tail looking frozen instead
-        // of gradually easing to a stop).
-        strip.style.transition = 'transform ' + spinDurationMs + 'ms cubic-bezier(0.16, 1, 0.3, 1)';
-        strip.style.transform = 'translateY(0px)';
+        // Two phases, chained: a fast, roughly constant-speed blur through
+        // most of the strip, then a separate, gentler deceleration through
+        // just the last few items so the reel is still visibly (if slowly)
+        // turning for a while before it actually stops - a single curve
+        // that decelerates hard enough to look "fast then slow" tends to
+        // finish almost all of its motion very early and then look frozen.
+        const fastDurationMs = Math.round(spinDurationMs * 0.55);
+        const slowDurationMs = spinDurationMs - fastDurationMs;
 
-        strip.addEventListener('transitionend', function handler() {
-            strip.removeEventListener('transitionend', handler);
-            onSettle();
+        strip.style.transition = 'transform ' + fastDurationMs + 'ms linear';
+        strip.style.transform = 'translateY(' + (-tailStartIndex * itemHeight) + 'px)';
+
+        strip.addEventListener('transitionend', function onFastEnd() {
+            strip.removeEventListener('transitionend', onFastEnd);
+            strip.style.transition = 'transform ' + slowDurationMs + 'ms cubic-bezier(0.33, 1, 0.68, 1)';
+            strip.style.transform = 'translateY(0px)';
+            strip.addEventListener('transitionend', function onSlowEnd() {
+                strip.removeEventListener('transitionend', onSlowEnd);
+                onSettle();
+            }, { once: true });
         }, { once: true });
     },
 
