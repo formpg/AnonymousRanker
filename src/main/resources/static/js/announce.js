@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const beforeCount = currentState.revealed.length;
         nextBtn.disabled = true;
 
-        showTeaser(RevealUI.expectedNextRank(currentState));
+        showTeaser(currentState.nextRank);
         await wait(900);
 
         const response = await fetch('/s/' + adminToken + '/announce/' + currentTopicId + '/reveal-next', { method: 'POST' });

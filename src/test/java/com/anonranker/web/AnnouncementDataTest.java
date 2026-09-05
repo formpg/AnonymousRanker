@@ -131,4 +131,50 @@ class AnnouncementDataTest {
         assertThat(afterAll.getRevealed()).extracting("name").containsExactly("Bob", "Carol", "Alice");
         assertThat(afterAll.isComplete()).isTrue();
     }
+
+    /**
+     * A tie can push more entries into the sequence than topN (everyone
+     * tied for 1st all carries rank 1, so all of them get included) - the
+     * server-computed nextRank must track the real rank of each of those
+     * entries, never a position-based guess that could drift below 1.
+     */
+    @Test
+    void nextRankStaysCorrectThroughAThreeWayTie() {
+        CreateSessionForm form = new CreateSessionForm();
+        form.setTitle("Tie Test");
+        form.setGroupId("tie-test-" + java.util.UUID.randomUUID());
+        form.setEventDate(LocalDate.now());
+        form.setPassword("pw");
+        form.setMemberNames("Alice\nBob\nCarol");
+        Session tieSession = sessionService.createSession(form);
+        Topic tieTopic = topicService.addTopic(tieSession, "Nobody votes - everyone ties at 0");
+
+        VotingRuleForm ruleForm = new VotingRuleForm();
+        ruleForm.setVotesPerTopic(1);
+        ruleForm.setAllowSelfVote(false);
+        ruleForm.setTopN(1);
+        ruleForm.setRevealCounts(true);
+        ruleForm.setAnnounceOrder(AnnounceOrder.BOTTOM_UP);
+        ruleForm.setPacing(AnnouncePacing.MANUAL);
+        ruleForm.setAutoIntervalSeconds(3);
+        votingRuleService.updateRule(tieSession, ruleForm);
+
+        RankingRevealDto sequence = announcementService.buildRevealSequence(tieSession, tieTopic);
+        assertThat(sequence.getRanks()).hasSize(3);
+        assertThat(sequence.getRanks()).allMatch(r -> r.getRank() == 1);
+
+        announcementStateService.startTopic(tieSession.getId(), tieTopic.getId());
+        assertThat(announcementService.currentState(tieSession, tieTopic).getNextRank()).isEqualTo(1);
+
+        announcementStateService.revealNext(tieTopic.getId(), sequence.getRanks());
+        assertThat(announcementService.currentState(tieSession, tieTopic).getNextRank()).isEqualTo(1);
+
+        announcementStateService.revealNext(tieTopic.getId(), sequence.getRanks());
+        assertThat(announcementService.currentState(tieSession, tieTopic).getNextRank()).isEqualTo(1);
+
+        announcementStateService.revealNext(tieTopic.getId(), sequence.getRanks());
+        var finalState = announcementService.currentState(tieSession, tieTopic);
+        assertThat(finalState.isComplete()).isTrue();
+        assertThat(finalState.getNextRank()).isNull();
+    }
 }

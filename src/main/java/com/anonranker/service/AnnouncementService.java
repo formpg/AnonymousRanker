@@ -58,6 +58,7 @@ public class AnnouncementService {
         RankingRevealDto sequence = buildRevealSequence(session, topic);
         List<RankEntryDto> revealed = announcementStateService.getRevealed(topic.getId());
         boolean complete = revealed.size() >= sequence.getRanks().size();
+        Integer nextRank = complete ? null : sequence.getRanks().get(revealed.size()).getRank();
         return new AnnouncementStateDto(
                 topic.getId(),
                 sequence.getTopicPrompt(),
@@ -67,11 +68,12 @@ public class AnnouncementService {
                 sequence.getAutoIntervalMs(),
                 revealed,
                 complete,
-                sequence.getCandidatePool()
+                sequence.getCandidatePool(),
+                nextRank
         );
     }
 
     public AnnouncementStateDto emptyState() {
-        return new AnnouncementStateDto(null, null, 0, null, null, 0, List.of(), false, List.of());
+        return new AnnouncementStateDto(null, null, 0, null, null, 0, List.of(), false, List.of(), null);
     }
 }

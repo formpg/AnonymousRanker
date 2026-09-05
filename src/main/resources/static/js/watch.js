@@ -54,9 +54,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    function animateOne(entry, candidatePool, revealedSoFar, state) {
+    function animateOne(entry, candidatePool) {
         return new Promise(resolve => {
-            showTeaser(RevealUI.expectedNextRank({ ...state, revealed: { length: revealedSoFar } }));
+            // The entry (and its real rank) is already known here - it came
+            // back from the poll - so the teaser can show the actual rank
+            // rather than guessing one from position (which ties can throw
+            // off, e.g. a multi-way tie for 2nd would make a purely
+            // positional guess drift below 1).
+            showTeaser(entry.rank);
             wait(900).then(() => {
                 RevealUI.spinReel(nameEl, candidatePool, entry.name, 10000, () => {
                     showEntry(entry);
@@ -67,12 +72,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    async function animateSequentially(entries, state, startCount) {
+    async function animateSequentially(entries, state) {
         animating = true;
-        let revealedSoFar = startCount;
         for (const entry of entries) {
-            await animateOne(entry, state.candidatePool, revealedSoFar, state);
-            revealedSoFar++;
+            await animateOne(entry, state.candidatePool);
         }
         animating = false;
     }
@@ -117,9 +120,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 knownCount = state.revealed.length;
             } else if (state.revealed.length > knownCount) {
                 const newEntries = state.revealed.slice(knownCount);
-                const startCount = knownCount;
                 knownCount = state.revealed.length;
-                await animateSequentially(newEntries, state, startCount);
+                await animateSequentially(newEntries, state);
             }
 
             if (state.complete && knownCount > 0) {
