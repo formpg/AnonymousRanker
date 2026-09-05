@@ -29,7 +29,7 @@ public class BallotValidator {
         Set<Long> validMemberIds = sessionMembers.stream().map(Member::getId).collect(java.util.stream.Collectors.toSet());
         for (Long candidateId : candidateMemberIds) {
             if (!validMemberIds.contains(candidateId)) {
-                throw new InvalidBallotException("この会のメンバーではない候補が含まれています");
+                throw new InvalidBallotException("このグループのメンバーではない候補が含まれています");
             }
             if (!rule.isAllowSelfVote() && candidateId.equals(voter.getId())) {
                 throw new InvalidBallotException("このお題では自分自身に投票することはできません");

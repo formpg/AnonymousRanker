@@ -43,7 +43,7 @@ class RankingServiceTest {
     void setUp() {
         rankingService = new RankingService(voteRepository);
 
-        session = new Session("Test Session", LocalDate.now(), "hash", "admin-token", "voting-token");
+        session = new Session("Test Session", "group-ranking-test", LocalDate.now(), "hash", "admin-token", "voting-token");
         alice = new Member(session, "Alice", 0);
         bob = new Member(session, "Bob", 1);
         carol = new Member(session, "Carol", 2);

@@ -32,6 +32,6 @@ public class VotingRuleService {
         rule.setRevealCounts(form.isRevealCounts());
         rule.setAnnounceOrder(form.getAnnounceOrder());
         rule.setPacing(form.getPacing());
-        rule.setAutoIntervalMs(form.getAutoIntervalMs());
+        rule.setAutoIntervalMs(form.getAutoIntervalSeconds() * 1000);
     }
 }

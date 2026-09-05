@@ -36,6 +36,7 @@ class AdminAuthTest {
     void setUp() {
         CreateSessionForm form = new CreateSessionForm();
         form.setTitle("Auth Test Session");
+        form.setGroupId("auth-test-" + java.util.UUID.randomUUID());
         form.setEventDate(LocalDate.now());
         form.setPassword("correct-password");
         form.setMemberNames("Alice\nBob");

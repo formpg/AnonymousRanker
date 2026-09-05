@@ -58,6 +58,7 @@ class VotingFlowTest {
     void setUp() {
         CreateSessionForm form = new CreateSessionForm();
         form.setTitle("Voting Flow Test");
+        form.setGroupId("voting-flow-test-" + java.util.UUID.randomUUID());
         form.setEventDate(LocalDate.now());
         form.setPassword("pw");
         form.setMemberNames("Alice\nBob\nCarol");

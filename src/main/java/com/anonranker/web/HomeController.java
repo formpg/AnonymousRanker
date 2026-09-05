@@ -65,9 +65,9 @@ public class HomeController {
 
     @PostMapping("/sessions/login")
     public String login(@ModelAttribute("form") SessionLoginForm form, HttpSession httpSession, Model model) {
-        Optional<Session> session = sessionService.loginByTitleAndPassword(form.getTitle(), form.getPassword());
+        Optional<Session> session = sessionService.loginByGroupIdAndPassword(form.getGroupId(), form.getPassword());
         if (session.isEmpty()) {
-            model.addAttribute("error", "タイトルまたはパスワードが違います");
+            model.addAttribute("error", "グループIDまたはパスワードが違います");
             return "session-login";
         }
 

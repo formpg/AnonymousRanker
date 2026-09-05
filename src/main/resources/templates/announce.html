@@ -8,7 +8,7 @@
 </head>
 <body>
 <div class="page" th:attr="data-admin-token=${adminToken}" id="announce-page">
-    <h1 th:text="${meeting.title}">会のタイトル</h1>
+    <h1 th:text="${meeting.title}">グループのタイトル</h1>
 
     <div class="card">
         <h2>お題を選んで発表を開始</h2>
@@ -21,8 +21,8 @@
     </div>
 
     <div class="card" id="reveal-card" style="display:none">
-        <div id="reveal-topic-label" style="font-weight:bold;margin-bottom:4px"></div>
-        <div id="reveal-range-label" class="muted" style="margin-bottom:16px"></div>
+        <div id="reveal-topic-label" class="reveal-topic-title"></div>
+        <div id="reveal-range-label" class="reveal-range"></div>
         <div class="roulette-rank" id="reveal-rank"></div>
         <div class="roulette-display" id="reveal-name">-</div>
         <div class="roulette-count" id="reveal-count"></div>

@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>会を作成 - AnonymousRanker</title>
+    <title>グループを作成 - AnonymousRanker</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
 <div class="page">
-    <h1>会を作成</h1>
-    <p class="subtitle">タイトル・開催日・メンバー・パスワードを入力してください。</p>
+    <h1>グループを作成</h1>
+    <p class="subtitle">タイトル・グループID・開催日・メンバー・パスワードを入力してください。</p>
     <div class="card">
         <p class="error" th:if="${error}" th:text="${error}"></p>
         <form th:action="@{/sessions}" th:object="${form}" method="post">
@@ -18,6 +18,9 @@
             </ul>
             <label for="title">タイトル</label>
             <input type="text" id="title" th:field="*{title}" placeholder="例: 忘年会2026">
+
+            <label for="groupId">グループID（ログイン時に使用します）</label>
+            <input type="text" id="groupId" th:field="*{groupId}" placeholder="例: bounenkai2026">
 
             <label for="eventDate">開催日</label>
             <input type="date" id="eventDate" th:field="*{eventDate}">
@@ -28,7 +31,7 @@
             <label for="password">パスワード</label>
             <input type="password" id="password" th:field="*{password}">
 
-            <button type="submit">会を作成する</button>
+            <button type="submit">グループを作成する</button>
         </form>
     </div>
 </div>

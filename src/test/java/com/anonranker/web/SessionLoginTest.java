@@ -12,19 +12,20 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.hamcrest.Matchers.containsString;
 
 /**
- * Covers "log back into a previously created session" - the organizer types
- * the session's title + password again instead of needing to have kept the
- * admin link, per the requirement that a session can be revisited any
- * number of times this way.
+ * Covers "log back into a previously created group" - the organizer types
+ * the group's ID + password again instead of needing to have kept the admin
+ * link, per the requirement that a group can be revisited any number of
+ * times this way.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -38,17 +39,14 @@ class SessionLoginTest {
     private SessionService sessionService;
 
     private String adminToken;
-    private String sessionTitle;
+    private String groupId;
 
     @BeforeEach
     void setUp() {
-        // Title is randomized per test method run because the test datasource is
-        // shared across test methods (and classes, via Spring's context cache) -
-        // a fixed title would collide with sessions created by other @BeforeEach
-        // invocations and make findByTitle()'s match ambiguous.
-        sessionTitle = "Login Test Session " + java.util.UUID.randomUUID();
+        groupId = "login-test-" + UUID.randomUUID();
         CreateSessionForm form = new CreateSessionForm();
-        form.setTitle(sessionTitle);
+        form.setTitle("Login Test Group");
+        form.setGroupId(groupId);
         form.setEventDate(LocalDate.now());
         form.setPassword("correct-password");
         form.setMemberNames("Alice\nBob");
@@ -56,12 +54,12 @@ class SessionLoginTest {
     }
 
     @Test
-    void correctTitleAndPasswordLogsBackIntoTheSameSession() throws Exception {
+    void correctGroupIdAndPasswordLogsBackIntoTheSameGroup() throws Exception {
         MockHttpSession httpSession = new MockHttpSession();
 
         mockMvc.perform(post("/sessions/login")
                         .session(httpSession)
-                        .param("title", sessionTitle)
+                        .param("groupId", groupId)
                         .param("password", "correct-password"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/s/" + adminToken + "/admin"));
@@ -76,21 +74,21 @@ class SessionLoginTest {
 
         mockMvc.perform(post("/sessions/login")
                         .session(httpSession)
-                        .param("title", sessionTitle)
+                        .param("groupId", groupId)
                         .param("password", "wrong-password"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("タイトルまたはパスワードが違います")));
+                .andExpect(content().string(containsString("グループIDまたはパスワードが違います")));
 
         mockMvc.perform(get("/s/" + adminToken + "/admin").session(httpSession))
                 .andExpect(status().is3xxRedirection());
     }
 
     @Test
-    void unknownTitleShowsAnError() throws Exception {
+    void unknownGroupIdShowsAnError() throws Exception {
         mockMvc.perform(post("/sessions/login")
-                        .param("title", "No Such Session " + java.util.UUID.randomUUID())
+                        .param("groupId", "no-such-group-" + UUID.randomUUID())
                         .param("password", "whatever"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("タイトルまたはパスワードが違います")));
+                .andExpect(content().string(containsString("グループIDまたはパスワードが違います")));
     }
 }

@@ -18,6 +18,17 @@ public class Session {
     @Column(nullable = false)
     private String title;
 
+    /**
+     * Chosen by the organizer at creation time and used (with the password)
+     * to log back into the group later. Not {@code nullable = false} at the
+     * DB level - a fixed-NOT-NULL column can't be added via
+     * {@code ddl-auto=update} to a table that already has rows - but every
+     * session created through {@link com.anonranker.web.dto.CreateSessionForm}
+     * always supplies one.
+     */
+    @Column(unique = true)
+    private String groupId;
+
     @Column(nullable = false)
     private LocalDate eventDate;
 
@@ -47,8 +58,10 @@ public class Session {
     protected Session() {
     }
 
-    public Session(String title, LocalDate eventDate, String passwordHash, String adminToken, String votingToken) {
+    public Session(String title, String groupId, LocalDate eventDate, String passwordHash, String adminToken,
+                   String votingToken) {
         this.title = title;
+        this.groupId = groupId;
         this.eventDate = eventDate;
         this.passwordHash = passwordHash;
         this.adminToken = adminToken;
@@ -66,6 +79,10 @@ public class Session {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public String getGroupId() {
+        return groupId;
     }
 
     public LocalDate getEventDate() {

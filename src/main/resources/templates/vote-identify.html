@@ -9,7 +9,7 @@
 <body>
 <div class="page">
     <p class="error" th:if="${previewMode}" style="color:#ffcf6c">プレビューモード：ここでの操作は投票として記録されません</p>
-    <h1 th:text="${meeting.title}">会のタイトル</h1>
+    <h1 th:text="${meeting.title}">グループのタイトル</h1>
     <div class="card">
         <h2>あなたは誰ですか？</h2>
         <form th:action="@{${action}}" method="post">

@@ -2,15 +2,15 @@ package com.anonranker.web.dto;
 
 public class SessionLoginForm {
 
-    private String title;
+    private String groupId;
     private String password;
 
-    public String getTitle() {
-        return title;
+    public String getGroupId() {
+        return groupId;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
     }
 
     public String getPassword() {

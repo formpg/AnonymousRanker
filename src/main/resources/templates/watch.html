@@ -8,12 +8,12 @@
 </head>
 <body>
 <div class="page" id="watch-page" th:attr="data-voting-token=${votingToken}">
-    <h1 th:text="${meeting.title}">会のタイトル</h1>
+    <h1 th:text="${meeting.title}">グループのタイトル</h1>
 
     <div class="card">
         <p id="waiting-label">まだ発表が始まっていません。幹事が発表を開始するまでお待ちください。</p>
-        <div id="reveal-topic-label" style="font-weight:bold;margin-bottom:4px;display:none"></div>
-        <div id="reveal-range-label" class="muted" style="margin-bottom:16px;display:none"></div>
+        <div id="reveal-topic-label" class="reveal-topic-title" style="display:none"></div>
+        <div id="reveal-range-label" class="reveal-range" style="display:none"></div>
         <div class="roulette-rank" id="reveal-rank"></div>
         <div class="roulette-display" id="reveal-name"></div>
         <div class="roulette-count" id="reveal-count"></div>

@@ -8,7 +8,7 @@
 </head>
 <body>
 <div class="page">
-    <h1 th:text="${meeting.title}">会のタイトル</h1>
+    <h1 th:text="${meeting.title}">グループのタイトル</h1>
     <div class="card">
         <a class="btn" style="width:100%;text-align:center" th:href="@{/vote/{token}/vote(token=${votingToken})}">投票する</a>
     </div>

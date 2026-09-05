@@ -39,7 +39,7 @@ public class VotingRuleController {
         form.setRevealCounts(rule.isRevealCounts());
         form.setAnnounceOrder(rule.getAnnounceOrder());
         form.setPacing(rule.getPacing());
-        form.setAutoIntervalMs(rule.getAutoIntervalMs());
+        form.setAutoIntervalSeconds(Math.max(1, (rule.getAutoIntervalMs() + 999) / 1000));
 
         model.addAttribute("adminToken", adminToken);
         model.addAttribute("form", form);

@@ -34,9 +34,14 @@ public class SessionService {
         if (names.isEmpty()) {
             throw new IllegalArgumentException("メンバーを1人以上入力してください");
         }
+        String groupId = form.getGroupId().trim();
+        if (sessionRepository.existsByGroupId(groupId)) {
+            throw new IllegalArgumentException("このグループIDは既に使われています。別のIDを指定してください");
+        }
 
         Session session = new Session(
                 form.getTitle(),
+                groupId,
                 form.getEventDate(),
                 passwordService.hash(form.getPassword()),
                 UUID.randomUUID().toString(),
@@ -69,15 +74,13 @@ public class SessionService {
     }
 
     /**
-     * Looks up a previously created session by title + password so the
+     * Looks up a previously created session by group ID + password so the
      * organizer can get back into it later without having kept the admin
-     * link. Titles aren't unique, so every session sharing that title is
-     * checked until one matches the password.
+     * link.
      */
     @Transactional(readOnly = true)
-    public Optional<Session> loginByTitleAndPassword(String title, String rawPassword) {
-        return sessionRepository.findByTitle(title).stream()
-                .filter(session -> checkPassword(session, rawPassword))
-                .findFirst();
+    public Optional<Session> loginByGroupIdAndPassword(String groupId, String rawPassword) {
+        return sessionRepository.findByGroupId(groupId)
+                .filter(session -> checkPassword(session, rawPassword));
     }
 }

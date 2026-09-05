@@ -27,5 +27,18 @@ window.RevealUI = {
 
     formatCount(entry) {
         return (entry.count !== undefined && entry.count !== null) ? entry.count + '票' : '';
+    },
+
+    /**
+     * The rank about to be revealed, guessed from position alone (assumes no
+     * ties) so it can be shown big BEFORE the actual result is known -
+     * the server never sends not-yet-revealed ranks ahead of time, since
+     * that would spoil the surprise for anyone watching.
+     */
+    expectedNextRank(state) {
+        if (state.announceOrder === 'BOTTOM_UP') {
+            return state.topN - state.revealed.length;
+        }
+        return state.revealed.length + 1;
     }
 };

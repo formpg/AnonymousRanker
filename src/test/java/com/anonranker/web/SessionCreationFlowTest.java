@@ -11,7 +11,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -32,6 +34,7 @@ class SessionCreationFlowTest {
 
         MvcResult result = mockMvc.perform(post("/sessions")
                         .param("title", "Year End Party")
+                        .param("groupId", "year-end-party-" + java.util.UUID.randomUUID())
                         .param("eventDate", "2026-12-31")
                         .param("password", "secret123")
                         .param("memberNames", "Alice\nBob\nCarol"))
@@ -46,5 +49,25 @@ class SessionCreationFlowTest {
         Session created = sessionRepository.findByAdminToken(adminToken).orElseThrow();
         assertThat(created.getMembers()).hasSize(3);
         assertThat(created.getVotingRule()).isNotNull();
+    }
+
+    @Test
+    void rejectsADuplicateGroupId() throws Exception {
+        String groupId = "duplicate-group-" + java.util.UUID.randomUUID();
+        mockMvc.perform(post("/sessions")
+                .param("title", "First Group")
+                .param("groupId", groupId)
+                .param("eventDate", "2026-12-31")
+                .param("password", "secret123")
+                .param("memberNames", "Alice\nBob"));
+
+        mockMvc.perform(post("/sessions")
+                        .param("title", "Second Group")
+                        .param("groupId", groupId)
+                        .param("eventDate", "2026-12-31")
+                        .param("password", "anotherpassword")
+                        .param("memberNames", "Carol\nDave"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("既に使われています")));
     }
 }

@@ -5,7 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface SessionRepository extends JpaRepository<Session, Long> {
@@ -22,11 +21,8 @@ public interface SessionRepository extends JpaRepository<Session, Long> {
     @Query("select s from Session s left join fetch s.members where s.votingToken = :votingToken")
     Optional<Session> findByVotingToken(@Param("votingToken") String votingToken);
 
-    /**
-     * Titles aren't unique, so logging back into a session by title+password
-     * (see {@code SessionService#loginByTitleAndPassword}) checks the
-     * password hash against every session sharing that title.
-     */
-    @Query("select s from Session s left join fetch s.members where s.title = :title")
-    List<Session> findByTitle(@Param("title") String title);
+    @Query("select s from Session s left join fetch s.members where s.groupId = :groupId")
+    Optional<Session> findByGroupId(@Param("groupId") String groupId);
+
+    boolean existsByGroupId(String groupId);
 }

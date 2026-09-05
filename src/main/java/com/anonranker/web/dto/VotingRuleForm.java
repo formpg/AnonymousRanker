@@ -20,8 +20,8 @@ public class VotingRuleForm {
 
     private AnnouncePacing pacing;
 
-    @Min(value = 500, message = "500ms以上を指定してください")
-    private int autoIntervalMs;
+    @Min(value = 1, message = "1秒以上を指定してください")
+    private int autoIntervalSeconds;
 
     public int getVotesPerTopic() {
         return votesPerTopic;
@@ -71,11 +71,11 @@ public class VotingRuleForm {
         this.pacing = pacing;
     }
 
-    public int getAutoIntervalMs() {
-        return autoIntervalMs;
+    public int getAutoIntervalSeconds() {
+        return autoIntervalSeconds;
     }
 
-    public void setAutoIntervalMs(int autoIntervalMs) {
-        this.autoIntervalMs = autoIntervalMs;
+    public void setAutoIntervalSeconds(int autoIntervalSeconds) {
+        this.autoIntervalSeconds = autoIntervalSeconds;
     }
 }

@@ -33,15 +33,30 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function showTeaser(rank) {
+        rankEl.textContent = '第' + rank + '位';
+        rankEl.classList.add('rank-teaser');
+        nameEl.textContent = '？';
+        countEl.textContent = '';
+    }
+
     function showEntry(entry) {
         rankEl.textContent = '第' + entry.rank + '位';
+        rankEl.classList.remove('rank-teaser');
         nameEl.textContent = entry.name;
         countEl.textContent = RevealUI.formatCount(entry);
+    }
+
+    function wait(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
 
     async function revealStep() {
         const beforeCount = currentState.revealed.length;
         nextBtn.disabled = true;
+
+        showTeaser(RevealUI.expectedNextRank(currentState));
+        await wait(1000);
 
         RevealUI.spin(nameEl, currentState.candidatePool, 1200, async () => {
             const response = await fetch('/s/' + adminToken + '/announce/' + currentTopicId + '/reveal-next', { method: 'POST' });
@@ -54,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (currentState.complete) {
                 rankEl.textContent = '発表終了';
+                rankEl.classList.remove('rank-teaser');
                 if (currentState.revealed.length === beforeCount) {
                     nameEl.textContent = '';
                     countEl.textContent = '';
@@ -73,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const response = await fetch('/s/' + adminToken + '/announce/' + topicId + '/start', { method: 'POST' });
         currentState = await response.json();
 
-        topicLabel.textContent = '発表中のお題: ' + currentState.topicPrompt;
+        topicLabel.textContent = currentState.topicPrompt;
         rangeLabel.textContent = rangeText(currentState);
         revealedList.innerHTML = '';
         revealCard.style.display = 'block';

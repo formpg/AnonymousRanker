@@ -55,6 +55,7 @@ class AnnouncementDataTest {
     void setUp() {
         CreateSessionForm form = new CreateSessionForm();
         form.setTitle("Announcement Test");
+        form.setGroupId("announcement-test-" + java.util.UUID.randomUUID());
         form.setEventDate(LocalDate.now());
         form.setPassword("pw");
         form.setMemberNames("Alice\nBob\nCarol");
@@ -79,7 +80,7 @@ class AnnouncementDataTest {
         ruleForm.setRevealCounts(revealCounts);
         ruleForm.setAnnounceOrder(order);
         ruleForm.setPacing(AnnouncePacing.MANUAL);
-        ruleForm.setAutoIntervalMs(3000);
+        ruleForm.setAutoIntervalSeconds(3);
         votingRuleService.updateRule(session, ruleForm);
     }
 

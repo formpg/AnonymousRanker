@@ -48,6 +48,7 @@ class PreviewNoPersistTest {
     void setUp() {
         CreateSessionForm form = new CreateSessionForm();
         form.setTitle("Preview Test");
+        form.setGroupId("preview-test-" + java.util.UUID.randomUUID());
         form.setEventDate(LocalDate.now());
         form.setPassword("pw");
         form.setMemberNames("Alice\nBob");

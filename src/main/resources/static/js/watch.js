@@ -29,26 +29,43 @@ document.addEventListener('DOMContentLoaded', () => {
         revealedList.prepend(li);
     }
 
+    function showTeaser(rank) {
+        rankEl.textContent = '第' + rank + '位';
+        rankEl.classList.add('rank-teaser');
+        nameEl.textContent = '？';
+        countEl.textContent = '';
+    }
+
     function showEntry(entry) {
         rankEl.textContent = '第' + entry.rank + '位';
+        rankEl.classList.remove('rank-teaser');
         nameEl.textContent = entry.name;
         countEl.textContent = RevealUI.formatCount(entry);
     }
 
-    function animateOne(entry, candidatePool) {
+    function wait(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function animateOne(entry, candidatePool, revealedSoFar, state) {
         return new Promise(resolve => {
-            RevealUI.spin(nameEl, candidatePool, 1200, () => {
-                showEntry(entry);
-                appendToList(entry);
-                resolve();
+            showTeaser(RevealUI.expectedNextRank({ ...state, revealed: { length: revealedSoFar } }));
+            wait(1000).then(() => {
+                RevealUI.spin(nameEl, candidatePool, 1200, () => {
+                    showEntry(entry);
+                    appendToList(entry);
+                    resolve();
+                });
             });
         });
     }
 
-    async function animateSequentially(entries, candidatePool) {
+    async function animateSequentially(entries, state, startCount) {
         animating = true;
+        let revealedSoFar = startCount;
         for (const entry of entries) {
-            await animateOne(entry, candidatePool);
+            await animateOne(entry, state.candidatePool, revealedSoFar, state);
+            revealedSoFar++;
         }
         animating = false;
     }
@@ -60,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
         rankEl.textContent = '';
         nameEl.textContent = '';
         countEl.textContent = '';
-        topicLabel.textContent = '発表中のお題: ' + state.topicPrompt;
+        topicLabel.textContent = state.topicPrompt;
         rangeLabel.textContent = rangeText(state);
         waitingLabel.style.display = 'none';
         topicLabel.style.display = 'block';
@@ -92,8 +109,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 knownCount = state.revealed.length;
             } else if (state.revealed.length > knownCount) {
                 const newEntries = state.revealed.slice(knownCount);
+                const startCount = knownCount;
                 knownCount = state.revealed.length;
-                await animateSequentially(newEntries, state.candidatePool);
+                await animateSequentially(newEntries, state, startCount);
             }
 
             if (state.complete && knownCount > 0) {
