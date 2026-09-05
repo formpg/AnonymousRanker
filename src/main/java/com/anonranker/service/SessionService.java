@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -65,5 +66,18 @@ public class SessionService {
 
     public boolean checkPassword(Session session, String rawPassword) {
         return passwordService.matches(rawPassword, session.getPasswordHash());
+    }
+
+    /**
+     * Looks up a previously created session by title + password so the
+     * organizer can get back into it later without having kept the admin
+     * link. Titles aren't unique, so every session sharing that title is
+     * checked until one matches the password.
+     */
+    @Transactional(readOnly = true)
+    public Optional<Session> loginByTitleAndPassword(String title, String rawPassword) {
+        return sessionRepository.findByTitle(title).stream()
+                .filter(session -> checkPassword(session, rawPassword))
+                .findFirst();
     }
 }
